@@ -19,7 +19,7 @@ class DebugComponent extends Component {
 	 */
 	constructor(displayBBox, targetHtmlElement) {
 		super();
-		this.targetHtmlElement = targetHtmlElement; // TODO add something more generic here
+		this.targetHtmlElement = targetHtmlElement;
 		this.strWrapper = {
 			str: ""
 		};

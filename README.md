@@ -22,7 +22,16 @@ The goal is for ECSLite to be a lightweight and simple library that could be use
 - example3.html - shows how ExecutorComponent works
 - example4.html - shows simple animations
 
+### Speed Driver
+- a simple game where you have three road lanes and you need to move you car between them not to collide with anything in the opposite direction
 
+![Speed Driver](./docs/speed_driver.png)
+
+### Bubble Shooter
+- a clone of Bubble Shooter game
+- the aim is to collect as many points as possible. To get points you need to destroy the colored bubbles. In order to burst those bubbles you need to row/connect at least three bubbles of the same color.
+
+![Bubble Shooter](./docs/bubble_shooter.jpg)
 
 # Usage
 
