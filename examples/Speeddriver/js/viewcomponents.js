@@ -7,7 +7,7 @@
 // component that renders the road
 class RoadRenderer extends Component {
 
-	oninit() {
+	onInit() {
 		this.gameModel = this.scene.getGlobalAttribute(ATTR_GAME_MODEL);
 		this.spriteMgr = this.scene.getGlobalAttribute(ATTR_SPRITE_MGR);
 	}
@@ -38,7 +38,7 @@ class RoadRenderer extends Component {
 	}
 
 	// draws the road and the background
-	draw(ctx) {
+	onDraw(ctx) {
 		
 		let cameraPosition = Math.floor(this.gameModel.cameraPosition);
 
@@ -81,12 +81,12 @@ class RoadRenderer extends Component {
 
 // renderer for cars and obstacles
 class RoadObjectRenderer extends Component {
-	oninit() {
+	onInit() {
 		this.spriteMgr = this.scene.getGlobalAttribute(ATTR_SPRITE_MGR);
 		this.gameModel = this.scene.getGlobalAttribute(ATTR_GAME_MODEL);
 	}
 
-	draw(ctx) {
+	onDraw(ctx) {
 		if (this.owner.sprite != null) {
 			let cameraPosition = this.gameModel.cameraPosition;
 
@@ -107,13 +107,13 @@ class FlickerAnimation extends Component {
 		this.duration = duration;
 	}
 
-	oninit() {
+	onInit() {
 		this.frequency = 10;
 		this.lastFlicker = 0;
 		this.startTime = 0;
 	}
 
-	update(delta, absolute) {
+	onUpdate(delta, absolute) {
 		if (this.lastFlicker == 0) {
 			this.lastFlicker = absolute;
 		}
@@ -135,7 +135,7 @@ class FlickerAnimation extends Component {
 		if ((absolute - this.startTime) > this.duration) {
 			// finish
 			this.owner.addState(STATE_DRAWABLE);
-			this.sendmsg(MSG_ANIM_ENDED);
+			this.sendMessage(MSG_ANIM_ENDED);
 			this.owner.removeComponent(this);
 		}
 	}
@@ -144,12 +144,12 @@ class FlickerAnimation extends Component {
 // component that renders number of lives
 class LivesComponent extends Component {
 	
-	oninit() {
+	onInit() {
 		this.spriteMgr = this.scene.getGlobalAttribute(ATTR_SPRITE_MGR);
 		this.model = this.scene.getGlobalAttribute(ATTR_GAME_MODEL);
 	}
 
-	draw(ctx) {
+	onDraw(ctx) {
 		let lives = this.model.lives;
 		let sprite = this.owner.sprite;
 
@@ -164,11 +164,11 @@ class LivesComponent extends Component {
 // component that renders score
 class ScoreDisplayComponent extends Component {
 
-	oninit() {
+	onInit() {
 		this.model = this.scene.getGlobalAttribute(ATTR_GAME_MODEL);
 	}
 
-	draw(ctx) {
+	onDraw(ctx) {
 		let score = Math.floor(this.model.score);
 		score = (1e15 + score + "").slice(-4); // hack for leading zeros
 		let posX = 20;
@@ -190,17 +190,17 @@ class AnimTextDisplayComponent extends Component {
 		this.opacity = 0;
 	}
 
-	oninit() {
+	onInit() {
 		this.startTime = 0;
 	}
 
-	draw(ctx) {
+	onDraw(ctx) {
 		ctx.fillStyle = `rgba(255, 255, 255,  ${this.opacity})`;
 		ctx.textAlign = 'center';
 		ctx.fillText(this.text, this.owner.trans.posX, this.owner.trans.posY);
 	}
 
-	update(delta, absolute) {
+	onUpdate(delta, absolute) {
 		if (this.startTime == 0) {
 			this.startTime = absolute;
 		}
@@ -217,7 +217,7 @@ class AnimTextDisplayComponent extends Component {
 		if ((absolute - this.startTime) > this.duration) {
 			// animation ended -> finish
 			this.owner.removeComponent(this);
-			this.sendmsg(MSG_ANIM_ENDED);
+			this.sendMessage(MSG_ANIM_ENDED);
 		}
 	}
 }
@@ -225,12 +225,12 @@ class AnimTextDisplayComponent extends Component {
 // component that displays speed bar
 class SpeedbarComponent extends Component {
 	
-	oninit() {
+	onInit() {
 		this.spriteMgr = this.scene.getGlobalAttribute(ATTR_SPRITE_MGR);
-		this.car = this.scene.findFirstObjectByTag("car");
+		this.car = this.scene.findObjectByTag("car");
 	}
 
-	draw(ctx) {
+	onDraw(ctx) {
 		let barCover = this.spriteMgr.getBarCover();
 		let barFill = this.spriteMgr.getBarFill();
 

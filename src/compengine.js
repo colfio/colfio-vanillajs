@@ -25,7 +25,7 @@ var UNIT_SIZE = 1;
 
 /**
  * A scene that keeps a collection of all game objects
- * and calls draw/update functions on them
+ * and calls onDraw/onUpdate functions on them
  */
 class Scene {
 
@@ -61,12 +61,12 @@ class Scene {
 		 */
 		this.afterUpdate = null;
 		/**
-		 * Function is called before draw
+		 * Function is called before onDraw
 		 * @type {() => {}}
 		 */
 		this.beforeDraw = null;
 		/**
-		 * Function is called after draw
+		 * Function is called after onDraw
 		 * @type {() => {}}
 		 */
 		this.afterDraw = null;
@@ -87,7 +87,7 @@ class Scene {
 	 * @param {number} delay delay in seconds 
 	 * @param {Function} action () => {} a function pointer with no arguments
 	 */
-	addPendingInvocation(delay, action) {
+	callWithDelay(delay, action) {
 		this.pendingInvocations.push({
 			delay: delay,
 			time: 0,
@@ -133,7 +133,7 @@ class Scene {
 	 * @param {any} val 
 	 */
 	addGlobalAttribute(key, val) {
-		this.root.addAttribute(key, val);
+		this.root.assignAttribute(key, val);
 	}
 
 	/**
@@ -173,7 +173,7 @@ class Scene {
 	 * @param {String} tag
 	 * @returns {GameObject} 
 	 */
-	findFirstObjectByTag(tag) {
+	findObjectByTag(tag) {
 		if (this.gameObjectTags.has(tag)) {
 			for (let [key, gameObject] of this.gameObjectTags.get(tag)) {
 				return gameObject; // return the first one
@@ -278,13 +278,13 @@ class Scene {
 	 * @param {number} delta 
 	 * @param {number} absolute 
 	 */
-	update(delta, absolute) {
+	onUpdate(delta, absolute) {
 		if (this.beforeUpdate != null) {
 			this.beforeUpdate(delta, absolute);
 		}
 
 		// update
-		this.root.update(delta, absolute);
+		this.root.onUpdate(delta, absolute);
 		this.submitChanges(false);
 
 		// execute pending invocations
@@ -307,13 +307,13 @@ class Scene {
 	/**
 	 * Executes the drawing cycle
 	 */
-	draw() {
+	onDraw() {
 		if (this.beforeDraw != null) {
 			this.beforeDraw();
 		}
 
 		for (let gameObject of this.sortedObjects) {
-			gameObject.draw(this.canvasCtx);
+			gameObject.onDraw(this.canvasCtx);
 		}
 
 		if (this.afterDraw != null) {
@@ -326,7 +326,7 @@ class Scene {
 	 * @param {string|number} action action key 
 	 * @param {any} data any data 
 	 */
-	sendmsg(action, data) {
+	sendMessage(action, data) {
 		this._sendmsg(new Msg(action, null, null, data));
 	}
 
@@ -338,7 +338,7 @@ class Scene {
 			for (let [key, component] of subscribedComponents) {
 				// send message
 				if (component.owner.hasState(STATE_LISTENING)) {
-					component.onmessage(msg);
+					component.onMessage(msg);
 				}
 			}
 		}
@@ -346,7 +346,7 @@ class Scene {
 			let globalSubs = this.subscribers.get(MSG_ALL);
 			for (let [key, component] of globalSubs) {
 				if (component.owner.hasState(STATE_LISTENING)) {
-					component.onmessage(msg);
+					component.onMessage(msg);
 				}
 			}
 		}
@@ -622,7 +622,7 @@ class BBox {
 	 * @param {Trans} trans 
 	 * @param {Mesh} mesh 
 	 */
-	update(trans, mesh) {
+	onUpdate(trans, mesh) {
 		if (trans.absRotation != 0) {
 			let boxWidth = mesh.width * Math.abs(Math.cos(trans.absRotation)) + mesh.height * Math.abs(Math.sin(trans.absRotation));
 			let boxHeight = mesh.height * Math.abs(Math.cos(trans.absRotation)) + mesh.width * Math.abs(Math.sin(trans.absRotation));
@@ -1040,7 +1040,7 @@ class GameObject {
 
 		this.trans._updateTransform(this.parent == null ? null : this.parent.trans);
 		this.mesh._updateTransform(this.trans);
-		this.bbox.update(this.trans, this.mesh);
+		this.bbox.onUpdate(this.trans, this.mesh);
 
 		this._addPendingGameObjects(!recursively);
 
@@ -1147,13 +1147,13 @@ class GameObject {
 		// todo optimize and send only to subscribers!
 		for (let component of this.components) {
 			if (component.owner.hasState(STATE_LISTENING)) {
-				component.onmessage(msg);
+				component.onMessage(msg);
 			}
 		}
 
 		if (applyToChildren) {
 			for (let child of this.children) {
-				child.sendmsg(msg, applyToChildren);
+				child.sendMessage(msg, applyToChildren);
 			}
 		}
 	}
@@ -1169,7 +1169,7 @@ class GameObject {
 	}
 
 	/**
-	 * Removes given game object as soon as the update cycle ends
+	 * Removes given game object as soon as the onUpdate cycle ends
 	 * @param {GameObject} obj 
 	 */
 	removeGameObject(obj) {
@@ -1258,7 +1258,7 @@ class GameObject {
 	 * @param {string} key attribute key 
 	 * @param {any} val any value
 	 */
-	addAttribute(key, val) {
+	assignAttribute(key, val) {
 		this.attributes.set(key, val);
 	}
 
@@ -1284,16 +1284,16 @@ class GameObject {
 	 * @param {number} delta delta time since the last tick 
 	 * @param {number} absolute absolute time since the start of the engine
 	 */
-	update(delta, absolute) {
+	onUpdate(delta, absolute) {
 		if (this.hasState(STATE_UPDATABLE)) {
 			this.submitChanges(false);
 
 			for (let component of this.components) {
-				component.update(delta, absolute);
+				component.onUpdate(delta, absolute);
 			}
 
 			for (let [key, val] of this.children) {
-				val.update(delta, absolute);
+				val.onUpdate(delta, absolute);
 			}
 		}
 	}
@@ -1302,10 +1302,10 @@ class GameObject {
 	 * Executes drawing process upon every component
 	 * @param {CanvasRenderingContext2D} ctx 
 	 */
-	draw(ctx) {
+	onDraw(ctx) {
 		if (this.hasState(STATE_DRAWABLE)) {
 			for (let component of this.components) {
-				component.draw(ctx)
+				component.onDraw(ctx)
 			}
 		}
 	}
@@ -1351,7 +1351,7 @@ class GameObject {
 			obj.owner = this;
 			obj.scene = this.scene;
 			this.components.push(obj);
-			obj.oninit();
+			obj.onInit();
 		}
 
 		this._componentsToAdd = [];
@@ -1423,7 +1423,7 @@ class Component {
 	}
 
 	// called whenever the component is added to the scene
-	oninit() {
+	onInit() {
 		// override
 	}
 
@@ -1448,7 +1448,7 @@ class Component {
 	 * @param {string} action 
 	 * @param {any} data 
 	 */
-	sendmsg(action, data) {
+	sendMessage(action, data) {
 		this.scene._sendmsg(new Msg(action, this, this.owner, data));
 	}
 
@@ -1456,7 +1456,7 @@ class Component {
 	 * Handles incoming message
 	 * @param {Msg} msg message 
 	 */
-	onmessage(msg) {
+	onMessage(msg) {
 		// override
 	}
 
@@ -1465,17 +1465,17 @@ class Component {
 	 * @param {delta} delta number of seconds since the last update
 	 * @param {absolute} absolute number of seconds since the game has started 
 	 */
-	update(delta, absolute) {
+	onUpdate(delta, absolute) {
 		// override
 	}
 
 	// invokes drawing cycle
-	draw(ctx) {
+	onDraw(ctx) {
 		// override
 	}
 
 	// called whenever the component is to be removed
-	onFinished() {
+	onFinish() {
 		// override
 	}
 
@@ -1483,8 +1483,8 @@ class Component {
 	finish() {
 		this.owner.removeComponent(this);
 
-		if (this.onFinished != null) {
-			this.onFinished(this); // call the event
+		if (this.onFinish != null) {
+			this.onFinish(this); // call the event
 		}
 		this.isFinished = true;
 	}
@@ -1495,7 +1495,7 @@ Component.idCounter = 0;
 /**
  * Builder for game objects
  */
-class GameObjectBuilder {
+class Builder {
 	constructor(name) {
 		this.gameObj = new GameObject(name);
 		this.isGlobal = false;
@@ -1512,7 +1512,7 @@ class GameObjectBuilder {
 	}
 
 	withAttribute(key, attr) {
-		this.gameObj.addAttribute(key, attr);
+		this.gameObj.assignAttribute(key, attr);
 		return this;
 	}
 

@@ -9,7 +9,7 @@ let scene = null;
  * Base class of all Bubble Shooter components 
  */
 class BubbleShooterComponent extends Component {
-	oninit() {
+	onInit() {
 		// load global components
 		this.level = this.scene.getGlobalAttribute(ATTR_LEVEL);
 		this.spriteMgr = this.scene.getGlobalAttribute(ATTR_SPRITE_MGR);
@@ -23,7 +23,7 @@ class BubbleShooterComponent extends Component {
 
 	setGameState(state) {
 		this.game.setGameState(state);
-		this.sendmsg(MSG_GAME_STATE_CHANGED, state);
+		this.sendMessage(MSG_GAME_STATE_CHANGED, state);
 	}
 }
 
@@ -31,8 +31,8 @@ class BubbleShooterComponent extends Component {
  * Component responsible for bubble physics (movement and collisions) 
  */
 class BubblePhysics extends BubbleShooterComponent {
-	oninit() {
-		super.oninit();
+	onInit() {
+		super.onInit();
 	}
 
 	updateBubbleMovement(dt) {
@@ -98,11 +98,11 @@ class BubblePhysics extends BubbleShooterComponent {
 		return false;
 	}
 
-	update(delta, absolute) {
+	onUpdate(delta, absolute) {
 		this.updateBubbleMovement(delta);
 		if (this.checkBubbleCollision()) {
 			playSound(ASSETS_SND_HIT);
-			this.sendmsg(MSG_BUBBLE_COLLIDED);
+			this.sendMessage(MSG_BUBBLE_COLLIDED);
 			this.finish();
 		}
 
@@ -113,15 +113,15 @@ class BubblePhysics extends BubbleShooterComponent {
  * Component responsible for inserting new rows at given time interval 
  */
 class RowInserter extends BubbleShooterComponent {
-	oninit() {
-		super.oninit();
+	onInit() {
+		super.onInit();
 		this.lastTime = 0;
 		this.period = this.config.rowIncrementInterval;
 		this.subscribe(MSG_CLUSTER_REMOVED);
-		this.bubbles = this.scene.findFirstObjectByTag("bubbles");
+		this.bubbles = this.scene.findObjectByTag("bubbles");
 	}
 
-	onmessage(msg) {
+	onMessage(msg) {
 		if (msg.action == MSG_CLUSTER_REMOVED) {
 			if (!this.level.areBubblesAtVeryTop()) {
 				this.lastTime += this.period;
@@ -132,7 +132,7 @@ class RowInserter extends BubbleShooterComponent {
 		}
 	}
 
-	update(delta, absolute) {
+	onUpdate(delta, absolute) {
 		if (this.getGameState() == GAME_STATE_READY) {
 			if (this.lastTime == 0) {
 				this.lastTime = absolute;
@@ -152,7 +152,7 @@ class RowInserter extends BubbleShooterComponent {
 		}
 		
 		this.period /= (1 + Math.log(Math.min(1.01, this.config.rowIncrementAcceleration)));
-		this.sendmsg(MSG_ROW_ADDED, num);
+		this.sendMessage(MSG_ROW_ADDED, num);
 	}
 }
 
@@ -161,12 +161,12 @@ class RowInserter extends BubbleShooterComponent {
  * Contains special functions and cluster removal
  */
 class BubbleSnapResolver extends BubbleShooterComponent {
-	oninit() {
-		super.oninit();
+	onInit() {
+		super.onInit();
 		this.subscribe(MSG_BUBBLE_SNAPPED);
 	}
 
-	onmessage(msg) {
+	onMessage(msg) {
 		if (msg.action == MSG_BUBBLE_SNAPPED) {
 			let coords = msg.data.coordinates;
 			let bubble = msg.data.bubbleEntity;
@@ -238,7 +238,7 @@ class BubbleSnapResolver extends BubbleShooterComponent {
 			let manhattanDist = Math.abs(tile.x - newBubbleCoords.posX) + Math.abs(tile.y - newBubbleCoords.posY);
 
 			// execute animation with delay according to their distance
-			this.scene.addPendingInvocation(Math.log(manhattanDist)*0.2, () => {
+			this.scene.callWithDelay(Math.log(manhattanDist)*0.2, () => {
 				playSound(ASSETS_SND_CRACK);
 				currentScoreIncrement++;
 				this.game.score = currentScore + Math.floor(currentScoreIncrement / tilesToRemove.length * totalScoreIncrement);
@@ -256,12 +256,12 @@ class BubbleSnapResolver extends BubbleShooterComponent {
 			}
 
 			// when the animation is finished...
-			cmp.onFinished = () => {
+			cmp.onFinish = () => {
 				tile.reset(); // here we reset the tile that has been just removed
 				// ... update game state
 				if (++removed >= tilesToRemove.length) {
 					if (this.getGameState() != GAME_STATE_GAME_OVER) {
-						this.sendmsg(MSG_CLUSTER_REMOVED, tilesToRemove);
+						this.sendMessage(MSG_CLUSTER_REMOVED, tilesToRemove);
 						this.setGameState(GAME_STATE_READY);
 					}
 				}
@@ -274,12 +274,12 @@ class BubbleSnapResolver extends BubbleShooterComponent {
  * Component responsible for collision resolving and bubble snapping 
  */
 class CollisionResolver extends BubbleShooterComponent {
-	oninit() {
-		super.oninit();
+	onInit() {
+		super.onInit();
 		this.subscribe(MSG_BUBBLE_COLLIDED);
 	}
 
-	onmessage(msg) {
+	onMessage(msg) {
 		if (msg.action == MSG_BUBBLE_COLLIDED) {
 			this.bubbleCollided(msg.gameObject);
 		}
@@ -298,9 +298,9 @@ class CollisionResolver extends BubbleShooterComponent {
 			bubble.trans._updateTransform(bubble.parent.trans);
 			let translateAnim = new TranslateAnimation(bubble.trans.posX, bubble.trans.posY, tileObject.trans.posX, tileObject.trans.posY, this.config.bubbleSnapDelay);
 			bubble.addComponent(translateAnim);
-			translateAnim.onFinished = () => {
+			translateAnim.onFinish = () => {
 				bubble.remove();
-				this.sendmsg(MSG_BUBBLE_SNAPPED, new BubbleSnapMessage(newTileCoord, bubble.getAttribute(ATTR_BUBBLE)));
+				this.sendMessage(MSG_BUBBLE_SNAPPED, new BubbleSnapMessage(newTileCoord, bubble.getAttribute(ATTR_BUBBLE)));
 			};
 		}
 	}
@@ -311,14 +311,14 @@ class CollisionResolver extends BubbleShooterComponent {
  */
 class GameComponent extends BubbleShooterComponent {
 
-	oninit() {
-		super.oninit();
+	onInit() {
+		super.onInit();
 		this.subscribe(MSG_GAME_STATE_CHANGED);
 		this.subscribe(MSG_ROW_ADDED);
 		this.generator = this.owner.getAttribute(ATTR_BUBBLE_GENERATOR);
 	}
 
-	onmessage(msg) {
+	onMessage(msg) {
 		if (msg.action == MSG_GAME_STATE_CHANGED) {
 			let currentState = msg.data;
 			if (currentState == GAME_STATE_READY) {
@@ -347,12 +347,12 @@ class GameComponent extends BubbleShooterComponent {
  */
 class PlayerController extends BubbleShooterComponent {
 
-	oninit() {
-		super.oninit();
-		this.nextBubble = this.scene.findFirstObjectByTag("nextBubble");
-		this.cannonBubble = this.scene.findFirstObjectByTag("cannonBubble");
-		this.cannon = this.scene.findFirstObjectByTag("cannon");
-		this.base = this.scene.findFirstObjectByTag("base");
+	onInit() {
+		super.onInit();
+		this.nextBubble = this.scene.findObjectByTag("nextBubble");
+		this.cannonBubble = this.scene.findObjectByTag("cannonBubble");
+		this.cannon = this.scene.findObjectByTag("cannon");
+		this.base = this.scene.findObjectByTag("base");
 		this.setAngle(90); // set initial angle to 90°
 	}
 
@@ -382,13 +382,13 @@ class PlayerController extends BubbleShooterComponent {
 	// swap cannon bubble with the one the creature is holding
 	swapBubbles() {
 		if (this.getGameState() == GAME_STATE_READY) {
-			let cannonBubble = this.scene.findFirstObjectByTag("cannonBubble");
-			let nextBubble = this.scene.findFirstObjectByTag("nextBubble");
+			let cannonBubble = this.scene.findObjectByTag("cannonBubble");
+			let nextBubble = this.scene.findObjectByTag("nextBubble");
 			let cannonBubbleStr = cannonBubble.getAttribute(ATTR_BUBBLE);
 			let nextBubbleStr = nextBubble.getAttribute(ATTR_BUBBLE);
 			// swap bubble structures
-			cannonBubble.addAttribute(ATTR_BUBBLE, nextBubbleStr);
-			nextBubble.addAttribute(ATTR_BUBBLE, cannonBubbleStr);
+			cannonBubble.assignAttribute(ATTR_BUBBLE, nextBubbleStr);
+			nextBubble.assignAttribute(ATTR_BUBBLE, cannonBubbleStr);
 			// swap sprites
 			let mesh = nextBubble.mesh;
 			nextBubble.mesh = cannonBubble.mesh;
@@ -403,15 +403,15 @@ class PlayerController extends BubbleShooterComponent {
  */
 class PlayerMouseController extends PlayerController {
 
-	oninit() {
-		super.oninit();
+	onInit() {
+		super.onInit();
 		this.subscribe(MSG_MOVE);
 		this.subscribe(MSG_DOWN);
 		this.subscribe(MSG_TOUCH);
-		this.nextBubble = this.scene.findFirstObjectByTag("nextBubble");
+		this.nextBubble = this.scene.findObjectByTag("nextBubble");
 	}
 
-	onmessage(msg) {
+	onMessage(msg) {
 		if (msg.action == MSG_MOVE) {
 			this.onMouseMove(msg.data.mousePos);
 		} else if ((msg.action == MSG_DOWN && !msg.data.isTouch) || msg.action == MSG_TOUCH) {
@@ -436,7 +436,7 @@ class PlayerMouseController extends PlayerController {
 	// On mouse button click
 	onMouseDown(pos) {
 		this.onMouseMove(pos);
-		// update transforms
+		// onUpdate transforms
 		this.cannon.submitChanges(true);
 
 		let gamestate = this.getGameState();

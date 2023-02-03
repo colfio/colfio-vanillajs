@@ -1,11 +1,16 @@
-# ECSLite
+# COLF.IO
 
-ECSLite is an experimental Entity-Component-System library written in JavaScript with educational intentions, hence it should be very easy to learn for anyone who would like to get to understand how interactive games can be programmed.
+COLF.IO is an experimental Entity-Component-System library written in JavaScript with educational intentions to make it very easy to learn for anyone who would like to get to understand how interactive games can be programmed.
 
+This library was built on the basis of my [C++ Game Engine](https://github.com/dodolab/CogEngine), having reused the major parts.
+
+COLFIO = Component-Oriented Library For Interactive Objects
+
+> :warning: **This version is no longer maintained. The project was rewritten into TypeScript on top of a [PixiJS](https://pixijs.com/) graphical library. You can still use it if you want to build vanilla-JS, no-bundle minigames. The current version can be found on [Github](https://github.com/colfio/colfio)**.
 
 ## Features
 - Vanilla JavaScript
-- Focused on providing a simple but yet efficient API
+- Focused on providing a simple yet efficient API
 - Simple Canvas API
 - Scene Graph
 - Game Loop
@@ -13,13 +18,13 @@ ECSLite is an experimental Entity-Component-System library written in JavaScript
 - Asynchronous components
 
 ## Goals
-The goal is for ECSLite to be a lightweight and simple library that could be used for educational purposes. Therefore, it doesn't aim to provide a complex features of HTML5 game engines. Instead, it should teach developers the basics of component-oriented programming
+The goal for COLF.IO is to be a lightweight and simple library that could be used for educational purposes. Therefore, it doesn't aim to provide complex features of HTML5 game engines. Instead, it should teach developers the basics of component-oriented programming
 
 ## Examples
 - see the examples folder
 - example1.html - renders an image
 - example2.html - renders two squares and shows how DebugComponent works
-- example3.html - shows how ExecutorComponent works
+- example3.html - shows how ChainComponent works
 - example4.html - shows simple animations
 
 ### Speed Driver
@@ -28,8 +33,8 @@ The goal is for ECSLite to be a lightweight and simple library that could be use
 ![Speed Driver](./docs/speed_driver.png)
 
 ### Bubble Shooter
-- a clone of Bubble Shooter game
-- the aim is to collect as many points as possible. To get points you need to destroy the colored bubbles. In order to burst those bubbles you need to row/connect at least three bubbles of the same color.
+- a clone of the Bubble Shooter game
+- the goal is to collect as many points as possible. To get the points, you need to destroy the colored bubbles. In order to burst those bubbles, you need to connect at least three bubbles of the same color.
 
 ![Bubble Shooter](./docs/bubble_shooter.jpg)
 
@@ -69,21 +74,21 @@ This library is written solely in JavaScript ES6 and doesn't require any bundlin
 
 
 ## How does it work?
-- the logic is implemented inside components - you declare a component, attach it to a game object, and via its `update` method, you can update the state
+- the logic is implemented inside components - you declare a component, attach it to a game object, and via its `onUpdate` method, you can update the state
 
 ### Components
 - each component has the following lifecycle functions:
-  - `oninit` - initializes the component
-  - `onmessage` - sends a message to all subscribed components
-  - `update` - called during the game loop, updates the component state
-  - `draw` - called during the game loop, can use CanvasAPI to render stuff
-  - `onFinished` - called whenever this component has finished its execution
+  - `onInit` - initializes the component
+  - `onMessage` - sends a message to all subscribed components
+  - `onUpdate` - called during the game loop, updates the component state
+  - `onDraw` - called during the game loop, can use CanvasAPI to render stuff
+  - `onFinish` - called whenever this component has finished its execution
 - if you want to add a new component to a game object, you have to call `addComponent` - it will add it to the queue of new components that will be added in the end of the loop
 - any component can be terminated via `finish()` function
 
 ![Components Workflow](./docs/components.png)
 
-- example: creating a simple rectangle
+- **example**: creating a simple rectangle that will rotate
 
 ```javascript
 let rect1 = new GameObject("rect1");
@@ -97,22 +102,42 @@ scene.addGlobalGameObject(rect1);
 ```
 
 ### Game Objects
-- game objects form a tree-like structure called Scene Graph. Any transformation of an object applies to its children as well
+- game objects form a tree-like structure called a **Scene Graph**. Any transformation of an object applies to its children as well
 - each object is added to the scene instantly
-- every object has two main functions: `update()` and `draw()`, each of which calls all components attached to the object and calls respective functions upon them
+- every object has two main functions: `onUpdate()` and `onDraw()`, each of which calls all components attached to the object and calls respective functions upon them
 - game objects that have an initialized `mesh` property, can be rendered via a `BasicRenderer`
-- game objects have these important properties:
+- game objects have the following properties:
   - `tag` - a string that identifies the object
   - `trans` - transformation object
-  - `attributes` - list of attributes that can be accessed via string keys
+  - `attributes` - a list of attributes that can be accessed via string keys
   - `state` - a numeric state
   - `flags` - a bit array of flags
+
+- **example**: how to use attributes and flags
+
+```javascript
+// creating a new object
+let cannonBubble = new Builder("cannonBubble")
+  .withAttribute('bubble', new Bubble(90, configMgr.bubbleSpeed, configMgr.getBubbleByIndex(0)))
+  .withComponent(new BasicRenderer())
+  .withComponent(new TileStaticAnimator())
+  .withParent(cannon)
+  .build(scene);
+
+// we can now find the object by tag
+cannonBubble = scene.findObjectByTag("cannonBubble");
+cannonBubble.setFlag(12);
+const hasFlag = cannonBubble.hasFlag(12); // true
+// getting an attributef
+const bubble = cannonBubble.getAttribute('bubble');
+
+```
 
 ![Game Objects Workflow](./docs/objects.png)
 
 ### Packages
-- **Scene** - serves as a message bus and scene manager, contains global components, game objects, and attributes
-- **Component** - a basic unit of the ECS pattern. Components are attached to game objects, can subscribe to the messaging system via `subscribe()` and send messages to other components via `sendmsg`
+- **Scene** - serves as a message bus and a scene manager, contains global components, game objects, and attributes
+- **Component** - a basic unit of the ECS pattern. Components are attached to game objects, can subscribe to the messaging system via `subscribe()` and send messages to other components via `sendMessage`
 - **GameObject** - game objects are mere containers for components and attributes
 
 ![Packages](./docs/packages.png)
@@ -122,7 +147,7 @@ scene.addGlobalGameObject(rect1);
 
 ### Unit Size
 - unit size in px - all attributes are calculated against this size
-- example:
+- **example**:
 
 ```javascript
 // each unit will have 100 pixels
@@ -133,11 +158,11 @@ rect1.mesh = new RectMesh("rgb(255,0,0)", 1, 1);
 ```
 
 ### Scene
-- `addPendingInvocation`
+- `callWithDelay`
   - can call an action with a delay
 
 ```javascript
-scene.addPendingInvocation(0.5, () => {
+scene.callWithDelay(0.5, () => {
   playSound(ASSETS_SND_NEW_GAME);
 });
 ```
@@ -147,15 +172,16 @@ scene.addPendingInvocation(0.5, () => {
 - `addGlobalComponent`
   - attaches a component to the root object
 - `findAllObjectsByTag`
-  - allows to find objects by their tags
+  - finds all objects by their tags
 - `clearScene`
   - removes all components and objects from the scene
-- `sendmsg`
-  - sends a message to all subscribed components. Note that components also have this function which is easier to use as it passes some metadata from the component itself
+- `sendMessage`
+  - sends a message to all subscribed components
+  - each component has its own `sendMessage` function which is more preferred, as the component attaches some metadata to it
 
 ### Flags
 - `flags` is a bit array you can use to your own needs
-- example:
+- **example**:
 
 ```javascript
 myObject.setFlag(12);
@@ -166,7 +192,7 @@ myObject.hasFlag(12); // false
 
 ### BBox
 - each game object has a property `bbox` that represents a bounding box
-- the bounding box gets recalculated at the end of each game object's iteration
+- the bounding box gets recalculated at the end of each game object's update cycle
 - you can use it to verify if two objects intersect by calling `intersects()`
 
 ### Mesh
@@ -189,7 +215,7 @@ rect2.addComponent(new BasicRenderer());
 
 ### Trans
 - `trans` is a property of each game object that represents transformation data, such as:
-  - position, rotation, rotation offset, and absolute coordinates (calculated automatically)
+  - position, rotation, rotation offset, and absolute coordinates
 
 ```javascript
 car.trans.posX = model.cameraPositionX;
@@ -197,14 +223,14 @@ car.trans.posY = model.cameraPositionY;
 ```
 
 ### GameObject
-- game objects are only shells for components and attributes
+- **game objects are only shells for components and attributes**
 - `state` is a numeric state you can use to implement a simple state machine
 - `flags` is a bit array described above
 - `submitChanges(recursively)` will recalculate transformations
 
 ### Msg
 - messaging system uses a class `Msg` to store data
-- `action` - action key (string), used by the components to subscribe for a certain group of messages
+- `action` - action key (string), used by components to subscribe for a certain group of messages
   - special actions: 
     - `ALL` that is sent to **each** component
     - `OBJECT_ADDED` that is sent to inform subscribed components that a new game object has been added
@@ -215,22 +241,22 @@ car.trans.posY = model.cameraPositionY;
 
 ### Component
 #### Component API
-- `oninit` - initializes the component
+- `onInit` - initializes the component
 - `subscribe(action)` - subscribes for messages with a given action
 - `unsubscribe(action)` - unsubscribes a message
-- `sendmsg` - sends a message
-- `onmessage` - called whenever the component receives a message
-- `update` - game loop, called each 16ms, used to update the component's state
-- `draw` - dedicated for rendering purposes
-- `onFinished` - called when the component is about to be finished and removed
+- `sendMessage` - sends a message
+- `onMessage` - called whenever the component receives a message
+- `onUpdate` - game loop, called at 60FPS by default, used to update the component's state
+- `onDraw` - dedicated for rendering purposes, called at 60FPS by default
+- `onFinish` - called when the component is about to be finished and removed
 - `finish` - will terminate the component and remove it from the game object
 
 #### Component states
-- each component can be in several of the following states
+- each component can be in several of the following states (bit masks are used)
 - `STATE_INACTIVE` - not active
-- `STATE_UPDATABLE` -  `update` function can be invoked
-- `STATE_DRAWABLE` - `draw` function can be invoked
-- `STATE_LISTENING` - `onmessage` function can be invoked
+- `STATE_UPDATABLE` -  `onUpdate` function can be invoked
+- `STATE_DRAWABLE` - `onDraw` function can be invoked
+- `STATE_LISTENING` - `onMessage` function can be invoked
 
 
 ### Built-in components
@@ -272,33 +298,57 @@ let rotateAnim = new RotationAnimation(
   - `MSG_UP` - pointer up event
   - `MSG_MOVE` - pointer move event
 
-#### ExecutorComponent
+#### ChainComponent
 - this component is extremely powerful - you can use callbacks to implement a very complex behavior
 - see `example3.html` for more information
-- example: rotation every second
+- **example**: rotation every second
 
 ```javascript
-myObj.addComponent(new ExecutorComponent()
+myObj.addComponent(new ChainComponent()
   .beginInterval(1000)
-  .execute((cmp) => cmp.owner.rotation += 0.1)
+    .execute((cmp) => cmp.owner.rotation += 0.1)
   .endInterval()
 );
 ```
 
+- functions:
+  - `beginRepeat(times)` - `endRepeat` - will repeat the inner invocations
+  - `execute` - will execute a function
+  - `beginWhile(func)` - `endWhile()` - will repeat the inner invocations while the passed function returns true
+  - `beginInterval(num)` - `endInterval()`- will repeat the inner invocations every num-seconds
+  - `beginIf(func)` - `else` - `endIf()` - executes the inner invocation if the passed function returns true
+  - `addComponentAndWait(component, gameObj)` - will add a component and wait until the component finishes
+  - `waitTime(time)` - will wait the given number of seconds
+  - `waitForFinish(component)` - will wait until the given component finishes
+  - `waitUntil(func)` - will wait until the passed function returns true
+  - `waitFrames(num)` - will wait the given number of frames
+  - `waitForMessage(msg)` - will wait until the component receives a given message
+
 ### Utils
-- `imageLoader` - used to load images
+- `imageLoader` - loads images
 - `sortedArray` - an extension for Array object for sorted arrays
-- `GameObjectBuilder` - used to simplify game object creation
+- `Builder` - simplifies game object creation
 
 ```javascript
-let obj = new GameObjectBuilder("rect1")
+// using the builder
+let obj = new Builder("rect1")
 .withMesh(new RectMesh("rgb(255,0,0)", 1, 1))
 .withPosition(2,2)
 .withCenteredOrigin()
 .withComponent(new BasicRenderer())
 .asGlobal()
 .build(scene);
+
+// without the builder
+let obj = new GameObject("rect1");
+obj.mesh = new RectMesh("rgb(255,0,0)", 1, 1);
+obj.trans.setPosition(2, 2);
+obj.trans.rotationOffsetX = obj.mesh.width / 2;
+obj.trans.rotationOffsetY = obj.mesh.height / 2;
+obj.addComponent(new BasicRenderer());
+scene.addGlobalGameObject(obj);
 ```
 
 ### Tests
 - to make this repo as tiny as possible, there is no jest/mocha etc. The tests can be run by simply opening the `tests/run.html` file in your browser
+- the output is displayed in the console log. If the tests pass, the screen will turn green. Otherwise it turns red.

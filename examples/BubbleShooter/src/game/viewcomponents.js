@@ -4,7 +4,7 @@
  */
 class TileCoordinator extends Component {
 
-    oninit() {
+    onInit() {
         this.spriteMgr = this.scene.getGlobalAttribute(ATTR_SPRITE_MGR);
         this.level = this.scene.getGlobalAttribute(ATTR_LEVEL);
         this.lastTileId = TILE_ID_NONE;
@@ -14,7 +14,7 @@ class TileCoordinator extends Component {
         this.subscribe(MSG_SYNCHRONIZE);
     }
 
-    onmessage(msg) {
+    onMessage(msg) {
         // we can enforce the synchronization even via this message
         if (msg.action == MSG_SYNCHRONIZE) {
             this.synchronize();
@@ -59,7 +59,7 @@ class TileCoordinator extends Component {
         }
     }
 
-    update(delta, absolute) {
+    onUpdate(delta, absolute) {
         this.synchronize();
     }
 }
@@ -69,26 +69,26 @@ class TileCoordinator extends Component {
  */
 class RowInsertAnimator extends BubbleShooterComponent {
 
-    oninit() {
-        super.oninit();
+    onInit() {
+        super.onInit();
         this.subscribe(MSG_ROW_ADDED);
     }
 
-    onmessage(msg) {
+    onMessage(msg) {
         if (msg.action == MSG_ROW_ADDED) {
             let newRows = msg.data;
-            let bubbles = this.scene.findFirstObjectByTag("bubbles");
+            let bubbles = this.scene.findObjectByTag("bubbles");
             // shift the whole structure a bit and animate it down
             let translateAnim = new TranslateAnimation(bubbles.trans.posX, bubbles.trans.posY - newRows,
                 bubbles.trans.posX, bubbles.trans.posY, this.config.rowAnimDuration);
             bubbles.addComponent(translateAnim);
             bubbles.trans.posY -= newRows;
             // a bit hacky -> update the whole bubble structure once again to avoid flickering since we changed the position
-            bubbles.update(this.lastDelta, this.lastAbsolute);
+            bubbles.onUpdate(this.lastDelta, this.lastAbsolute);
         }
     }
 
-    update(delta, absolute) {
+    onUpdate(delta, absolute) {
         this.lastDelta = delta;
         this.lastAbsolute = absolute;
     }
@@ -99,16 +99,16 @@ class RowInsertAnimator extends BubbleShooterComponent {
  */
 class CannonBubbleAnimator extends BubbleShooterComponent {
 
-    oninit() {
-        super.oninit();
+    onInit() {
+        super.onInit();
         this.subscribe(MSG_GAME_STATE_CHANGED);
     }
 
-    onmessage(msg) {
+    onMessage(msg) {
         if (msg.action == MSG_GAME_STATE_CHANGED) {
             let currentState = msg.data;
             if (currentState == GAME_STATE_READY) {
-                let cannonBubble = this.scene.findFirstObjectByTag("cannonBubble");
+                let cannonBubble = this.scene.findObjectByTag("cannonBubble");
                 if (!cannonBubble.hasState(STATE_DRAWABLE)) {
                     cannonBubble.addState(STATE_DRAWABLE);
 
@@ -128,12 +128,12 @@ class CannonBubbleAnimator extends BubbleShooterComponent {
  */
 class TileStaticAnimator extends BubbleShooterComponent {
 
-    oninit() {
-        super.oninit();
+    onInit() {
+        super.onInit();
         this.animFrame = 0;
     }
 
-    update(delta, absolute) {
+    onUpdate(delta, absolute) {
         this.bubble = this.owner.getAttribute(ATTR_BUBBLE);
         if (this.bubble.bubbleInfo.index != TILE_ID_NONE) {
             let sprite = this.spriteMgr.getBubble(this.bubble.bubbleInfo.index);
@@ -154,11 +154,11 @@ class TileStaticAnimator extends BubbleShooterComponent {
  */
 class ScoreDisplay extends BubbleShooterComponent {
 
-    oninit() {
-        super.oninit();
+    onInit() {
+        super.onInit();
     }
 
-    update(delta, absolute) {
+    onUpdate(delta, absolute) {
         this.owner.mesh.text = "SCORE: " + this.game.score;
     }
 }
@@ -167,8 +167,8 @@ class ScoreDisplay extends BubbleShooterComponent {
  * Animation for bubble disappearing
  */
 class BubbleBlowAwayAnim extends BubbleShooterComponent {
-    oninit() {
-        super.oninit();
+    onInit() {
+        super.onInit();
         this.tile = this.owner.getAttribute(ATTR_TILE);
         this.viewState = this.owner.getAttribute(ATTR_BUBBLE_VIEWSTATE);
         this.viewState.animationType = ANIMATION_TYPE_BLOW_AWAY;
@@ -185,7 +185,7 @@ class BubbleBlowAwayAnim extends BubbleShooterComponent {
 
     }
 
-    update(delta, absolute) {
+    onUpdate(delta, absolute) {
         let bubbleSprite = this.spriteMgr.getBubble(this.tile.tileid);
         let animation = bubbleSprite[ANIMATION_TYPE_BLOW_AWAY];
 
@@ -214,7 +214,7 @@ class BubbleBlowAwayAnim extends BubbleShooterComponent {
  */
 class GlowAnimator extends Component {
 
-    update(delta, absolute) {
+    onUpdate(delta, absolute) {
         this.owner.mesh.alpha = (Math.cos(absolute * 3) + 1) / 3 + 0.6;
     }
 }
@@ -230,7 +230,7 @@ class TextMessageAnimator extends Component {
         this.start = 0;
     }
 
-    update(delta, absolute) {
+    onUpdate(delta, absolute) {
         if (this.start == 0) {
             this.start = absolute;
         } else {
@@ -248,28 +248,28 @@ class TextMessageAnimator extends Component {
  * Component responsible for animation of the creature
  */
 class CreatureAnimator extends BubbleShooterComponent {
-    oninit() {
-        super.oninit();
-        this.eye = this.scene.findFirstObjectByTag("eye");
-        this.leftHand = this.scene.findFirstObjectByTag("left_hand");
-        this.rightHand = this.scene.findFirstObjectByTag("right_hand");
-        this.cannonBubble = this.scene.findFirstObjectByTag("cannonBubble");
-        this.leftEar = this.scene.findFirstObjectByTag("left_ear");
-        this.rightEar = this.scene.findFirstObjectByTag("right_ear");
+    onInit() {
+        super.onInit();
+        this.eye = this.scene.findObjectByTag("eye");
+        this.leftHand = this.scene.findObjectByTag("left_hand");
+        this.rightHand = this.scene.findObjectByTag("right_hand");
+        this.cannonBubble = this.scene.findObjectByTag("cannonBubble");
+        this.leftEar = this.scene.findObjectByTag("left_ear");
+        this.rightEar = this.scene.findObjectByTag("right_ear");
 
         this.handAnimRunning = false;
 
         this.lastBlinkTime = 0;
         this.blinkingState = 0;
         // init blinking animation
-        this.scene.findFirstObjectByTag("eyelid3").removeState(STATE_DRAWABLE);
-        this.scene.findFirstObjectByTag("eyelid2").removeState(STATE_DRAWABLE);
+        this.scene.findObjectByTag("eyelid3").removeState(STATE_DRAWABLE);
+        this.scene.findObjectByTag("eyelid2").removeState(STATE_DRAWABLE);
 
         this.lastEarAnimTime = 0;
         this.earAnimRunning = false;
     }
 
-    update(delta, absolute) {
+    onUpdate(delta, absolute) {
         this._eyeAnim(delta, absolute);
         this._handAnim(delta, absolute);
         this._eyelidAnim(delta, absolute);
@@ -282,7 +282,7 @@ class CreatureAnimator extends BubbleShooterComponent {
 
         if (this.getGameState() == GAME_STATE_SHOOTING) {
             if (this.movingBubble == null) {
-                this.movingBubble = this.scene.findFirstObjectByTag("movingBubble");
+                this.movingBubble = this.scene.findObjectByTag("movingBubble");
             }
             bbox = this.movingBubble.bbox;
         } else {
@@ -304,14 +304,14 @@ class CreatureAnimator extends BubbleShooterComponent {
         if (this.blinkingState > 0) {
             let blinkState = Math.floor(this.blinkingState);
             if (blinkState == 1) {
-                this.scene.findFirstObjectByTag("eyelid2").addState(STATE_DRAWABLE);
+                this.scene.findObjectByTag("eyelid2").addState(STATE_DRAWABLE);
             } else if (blinkState == 2) {
-                this.scene.findFirstObjectByTag("eyelid3").addState(STATE_DRAWABLE);
+                this.scene.findObjectByTag("eyelid3").addState(STATE_DRAWABLE);
             } else if (blinkState == 3) {
-                this.scene.findFirstObjectByTag("eyelid3").removeState(STATE_DRAWABLE);
+                this.scene.findObjectByTag("eyelid3").removeState(STATE_DRAWABLE);
             } else if (blinkState >= 4) {
-                this.scene.findFirstObjectByTag("eyelid3").removeState(STATE_DRAWABLE);
-                this.scene.findFirstObjectByTag("eyelid2").removeState(STATE_DRAWABLE);
+                this.scene.findObjectByTag("eyelid3").removeState(STATE_DRAWABLE);
+                this.scene.findObjectByTag("eyelid2").removeState(STATE_DRAWABLE);
                 this.blinkingState = 0; // stop the animation
             }
 
@@ -346,8 +346,8 @@ class CreatureAnimator extends BubbleShooterComponent {
             this.lastEarAnimTime = absolute;
             this.earAnimRunning = true;
 
-            let ear1 = this.scene.findFirstObjectByTag("left_ear");
-            let ear2 = this.scene.findFirstObjectByTag("right_ear");
+            let ear1 = this.scene.findObjectByTag("left_ear");
+            let ear2 = this.scene.findObjectByTag("right_ear");
 
             // add rotation animations
             let anim1 = new RotationAnimation(ear1.trans.rotation, ear1.trans.rotation + 0.3, this.config.earAnimDuration, true, 2);
@@ -355,12 +355,12 @@ class CreatureAnimator extends BubbleShooterComponent {
 
             ear1.addComponent(anim1);
 
-            anim2.onFinished = () => {
+            anim2.onFinish = () => {
                 this.earAnimRunning = false;
             }
 
             // start the second animation a bit later
-            this.scene.addPendingInvocation(0.5, () => {
+            this.scene.callWithDelay(0.5, () => {
                 ear2.addComponent(anim2);
             });
         }
@@ -372,13 +372,13 @@ class CreatureAnimator extends BubbleShooterComponent {
  */
  class GameOverOverlay extends BubbleShooterComponent {
 
-    oninit() {
-        super.oninit();
+    onInit() {
+        super.onInit();
         this.subscribe(MSG_GAME_STATE_CHANGED);
         this.owner.removeState(STATE_DRAWABLE);
     }
 
-    onmessage(msg) {
+    onMessage(msg) {
         if (msg.action == MSG_GAME_STATE_CHANGED) {
             if (this.getGameState() == GAME_STATE_GAME_OVER) {
                 this.owner.addState(STATE_DRAWABLE);
@@ -394,14 +394,14 @@ class CreatureAnimator extends BubbleShooterComponent {
  */
  class SightsRenderer extends Component {
 
-    oninit() {
-        super.oninit();
-        this.cannon = this.scene.findFirstObjectByTag("cannon");
+    onInit() {
+        super.onInit();
+        this.cannon = this.scene.findObjectByTag("cannon");
         this.level = this.scene.getGlobalAttribute(ATTR_LEVEL);
         this.game = this.scene.getGlobalAttribute(ATTR_GAME);
     }
 
-    draw(ctx) {
+    onDraw(ctx) {
         let mesh = this.owner.mesh;
 
         let rot = this.cannon.trans.rotation;

@@ -88,7 +88,7 @@ function initGame() {
 	car.addComponent(new CarTouchController());	// component which controls the car
 	car.addComponent(new RoadObjectRenderer());	// component which renders the car
 	car.addComponent(new CarCollisionChecker()); // component which controls collisions
-	car.addAttribute(ATTR_LANE, 1); // the middle lane
+	car.assignAttribute(ATTR_LANE, 1); // the middle lane
 	scene.addGlobalGameObject(car);
 
 	// score renderer
@@ -135,10 +135,10 @@ function gameLoop() {
 	var delta = currentTime - lastTime;
 	gameTime += delta;
 
-	// clear canvas and call update and render function upon the scene
+	// clear canvas and call onUpdate and render function upon the scene
 	canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
-	scene.update(delta, gameTime);
-	scene.draw(canvasCtx);
+	scene.onUpdate(delta, gameTime);
+	scene.onDraw(canvasCtx);
 	lastTime = currentTime - (delta % interval);
 	
 	window.requestAnimationFrame(gameLoop);

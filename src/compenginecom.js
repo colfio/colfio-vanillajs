@@ -26,7 +26,7 @@ class DebugComponent extends Component {
 		this.displayBBox = displayBBox;
 	}
 
-	oninit() {
+	onInit() {
 		if (this.owner.parent != null) {
 			throw new Error("DebugComponent must be attached to the very root!");
 		}
@@ -46,14 +46,14 @@ class DebugComponent extends Component {
 		}
 	}
 
-	onmessage(msg) {
+	onMessage(msg) {
 		let ownerTag = msg.gameObject != null ? msg.gameObject.tag : "";
 		if (typeof (msg.action) == "string") {
 			console.log(msg.action + " >> " + ownerTag);
 		}
 	}
 
-	update(delta, absolute) {
+	onUpdate(delta, absolute) {
 		this.strWrapper.str = "";
 		this._procesExNode(this.owner, this.strWrapper);
 		this.targetHtmlElement.innerHTML = this.strWrapper.str;
@@ -137,7 +137,7 @@ class BasicRenderer extends Component {
 	/**
 	 * @param {CanvasRenderingContext2D} ctx 
 	 */
-	draw(ctx) {
+	onDraw(ctx) {
 		let mesh = this.owner.mesh;
 		let alpha = ctx.globalAlpha;
 
@@ -294,7 +294,7 @@ class Animation extends Component {
 		this.interpolation = Interpolation.linear;
 	}
 
-	update(delta, absolute) {
+	onUpdate(delta, absolute) {
 		if (this.startTime == 0) {
 			this.startTime = absolute;
 		}
@@ -355,8 +355,8 @@ class TranslateAnimation extends Animation {
 		this.targetPosY = targetPosY;
 	}
 
-	oninit() {
-		super.oninit();
+	onInit() {
+		super.onInit();
 		this.owner.trans.posX = this.srcPosX;
 		this.owner.trans.posY = this.srcPosY;
 	}
@@ -389,8 +389,8 @@ class RotationAnimation extends Animation {
 		this.targetRot = targetRot;
 	}
 
-	oninit() {
-		super.oninit();
+	onInit() {
+		super.onInit();
 		this.owner.trans.rotation = this.srcRot;
 	}
 
@@ -452,7 +452,7 @@ class InputManager extends Component {
 		this.mode = mode;
 	}
 
-	oninit() {
+	onInit() {
 		this.lastTouch = null;
 
 		let canvas = this.scene.canvas;
@@ -482,7 +482,7 @@ class InputManager extends Component {
 		}
 	}
 
-	onFinished() {
+	onFinish() {
 		let canvas = this.scene.canvas;
 		canvas.removeEventListener("touchstart", this.startHandler);
 		canvas.removeEventListener("touchend", this.endHandler);
@@ -506,7 +506,7 @@ class InputManager extends Component {
 		}
 
 		if (this.mode |= MSG_DOWN) {
-			this.sendmsg(MSG_DOWN, {
+			this.sendMessage(MSG_DOWN, {
 				mousePos: this.getMousePos(this.scene.canvas, evt, isTouch),
 				isTouch: isTouch
 			});
@@ -516,7 +516,7 @@ class InputManager extends Component {
 	handleMove(evt) {
 		evt.preventDefault();
 		let isTouch = typeof (evt.changedTouches) !== "undefined";
-		this.sendmsg(MSG_MOVE, {
+		this.sendMessage(MSG_MOVE, {
 			mousePos: this.getMousePos(this.scene.canvas, evt, isTouch),
 			isTouch: isTouch
 		});
@@ -543,12 +543,12 @@ class InputManager extends Component {
 				Math.abs(this.lastTouch.pageY - posY) < 10) {
 				// at last send the message to all subscribers about this event
 				if (isTouch) {
-					this.sendmsg(MSG_TOUCH, {
+					this.sendMessage(MSG_TOUCH, {
 						mousePos: this.getMousePos(this.scene.canvas, evt, isTouch),
 						isTouch: isTouch
 					});
 				} else {
-					this.sendmsg(MSG_UP, {
+					this.sendMessage(MSG_UP, {
 						mousePos: this.getMousePos(this.scene.canvas, evt, isTouch),
 						isTouch: isTouch
 					});
@@ -707,7 +707,7 @@ class ExNode {
 /**
  * Component that executes a chain of commands during the update loop
  */
-class ExecutorComponent extends Component {
+class ChainComponent extends Component {
 	constructor() {
 		super();
 		this.scopeStack = new Stack();
@@ -724,7 +724,7 @@ class ExecutorComponent extends Component {
 	/**
 	 * Repeats the following part of the chain until endRepeat()
 	 * @param {number|function} num number of repetitions, 0 for infinite loop; or function that returns that number
-	 * @returns {ExecutorComponent}
+	 * @returns {ChainComponent}
 	 */
 	beginRepeat(num) {
 		if (typeof (num) !== `number` && typeof (num) !== `function`) {
@@ -736,7 +736,7 @@ class ExecutorComponent extends Component {
 
 	/**
 	 * Enclosing element for beginRepeat() command
-	 * @returns {ExecutorComponent}
+	 * @returns {ChainComponent}
 	 */
 	endRepeat() {
 		this._enqueue(CMD_END_REPEAT);
@@ -746,7 +746,7 @@ class ExecutorComponent extends Component {
 	/**
 	 * Executes a closure
 	 * @param {action} func function to execute 
-	 * @returns {ExecutorComponent}
+	 * @returns {ChainComponent}
 	 */
 	execute(func) {
 		if (typeof (func) !== `function`) {
@@ -760,7 +760,7 @@ class ExecutorComponent extends Component {
 	 * Repeats the following part of the chain up to the endWhile() 
 	 * till the func() keeps returning true 
 	 * @param {function} func function that returns either true or false
-	 * @returns {ExecutorComponent}
+	 * @returns {ChainComponent}
 	 */
 	beginWhile(func) {
 		if (typeof (func) !== `function`) {
@@ -772,7 +772,7 @@ class ExecutorComponent extends Component {
 
 	/**
 	 * Enclosing command for beginWhile()
-	 * @returns {ExecutorComponent}
+	 * @returns {ChainComponent}
 	 */
 	endWhile() {
 		this._enqueue(CMD_END_WHILE);
@@ -782,7 +782,7 @@ class ExecutorComponent extends Component {
 	/**
 	 * Starts an infinite loop that will repeat every num second  
 	 * @param {number} num number of seconds to wait
-	 * @returns {ExecutorComponent}
+	 * @returns {ChainComponent}
 	 */
 	beginInterval(num) {
 		if (typeof (num) !== `number` && typeof (num) !== `function`) {
@@ -794,7 +794,7 @@ class ExecutorComponent extends Component {
 
 	/**
 	 * Enclosing command for beginInterval()
-	 * @returns {ExecutorComponent}
+	 * @returns {ChainComponent}
 	 */
 	endInterval() {
 		this._enqueue(CMD_END_INTERVAL);
@@ -805,7 +805,7 @@ class ExecutorComponent extends Component {
 	 * Checks an IF condition returned by 'func' and jumps to the next element,
 	 * behind the 'else' element or behind the 'endIf' element, if the condition is not met
 	 * @param {function} func function that returns either true or false 
-	 * @returns {ExecutorComponent}
+	 * @returns {ChainComponent}
 	 */
 	beginIf(func) {
 		if (typeof (func) !== `function`) {
@@ -818,7 +818,7 @@ class ExecutorComponent extends Component {
 	/**
 	 * Defines a set of commands that are to be executed if the condition of the current
 	 * beginIf() command is not met
-	 * @returns {ExecutorComponent}
+	 * @returns {ChainComponent}
 	 */
 	else() {
 		this._enqueue(CMD_ELSE);
@@ -827,7 +827,7 @@ class ExecutorComponent extends Component {
 
 	/**
 	 * Enclosing command for beginIf()
-	 * @returns {ExecutorComponent}
+	 * @returns {ChainComponent}
 	 */
 	endIf() {
 		this._enqueue(CMD_END_IF);
@@ -838,7 +838,7 @@ class ExecutorComponent extends Component {
 	 * Adds a new component to given game object (or another one if specified)
 	 * @param {GameObject} gameObj 
 	 * @param {Component|function} component component or function that returns a component
-	 * @returns {ExecutorComponent}
+	 * @returns {ChainComponent}
 	 */
 	addComponent(component, gameObj = null) {
 		if (typeof (component) == `object` && (!(component instanceof Component)) ||
@@ -867,7 +867,7 @@ class ExecutorComponent extends Component {
 	/**
 	 * Waits given amount of seconds
 	 * @param {time|function} time number of seconds to wait; or function that returns this number 
-	 * @returns {ExecutorComponent}
+	 * @returns {ChainComponent}
 	 */
 	waitTime(time) {
 		if (typeof (time) !== `number` && typeof (time) !== `function`) {
@@ -880,7 +880,7 @@ class ExecutorComponent extends Component {
 	/**
 	 * Waits until given component isn't finished
 	 * @param {Component|function} component or function that returns this component 
-	 * @returns {ExecutorComponent}
+	 * @returns {ChainComponent}
 	 */
 	waitForFinish(component) {
 		if (typeof (component) == `object` && (!(component instanceof Component))) {
@@ -893,7 +893,7 @@ class ExecutorComponent extends Component {
 	/**
 	 * Waits until given function keeps returning true
 	 * @param {Function} func 
-	 * @returns {ExecutorComponent}
+	 * @returns {ChainComponent}
 	 */
 	waitUntil(func) {
 		if (typeof (func) !== `function`) {
@@ -904,9 +904,9 @@ class ExecutorComponent extends Component {
 	}
 
 	/**
-	 * Waits given number of iterations of update loop
+	 * Waits given number of iterations of onUpdate loop
 	 * @param {number} num 
-	 * @returns {ExecutorComponent}
+	 * @returns {ChainComponent}
 	 */
 	waitFrames(num) {
 		if (typeof (num) !== `number`) {
@@ -919,7 +919,7 @@ class ExecutorComponent extends Component {
 	/**
 	 * Waits until a message with given key isn't sent
 	 * @param {String} action 
-	 * @returns {ExecutorComponent}
+	 * @returns {ChainComponent}
 	 */
 	waitForMessage(msg) {
 		if (typeof (msg) !== `string`) {
@@ -933,7 +933,7 @@ class ExecutorComponent extends Component {
 	 * Removes component from given game object
 	 * @param {GameObject} gameObj 
 	 * @param {Component} cmp 
-	 * @returns {ExecutorComponent}
+	 * @returns {ChainComponent}
 	 */
 	removeComponent(cmp, gameObj = null) {
 		if (typeof (cmp) == `object` && (!(cmp instanceof Component)) ||
@@ -947,7 +947,7 @@ class ExecutorComponent extends Component {
 	/**
 	 * Removes a game object with given tag
 	 * @param {String} tag 
-	 * @returns {ExecutorComponent}
+	 * @returns {ChainComponent}
 	 */
 	removeGameObjectByTag(tag) {
 		if (typeof (tag) !== `string`) {
@@ -960,7 +960,7 @@ class ExecutorComponent extends Component {
 	/**
 	 * Removes given game object
 	 * @param {GameObject} obj 
-	 * @returns {ExecutorComponent}
+	 * @returns {ChainComponent}
 	 */
 	removeGameObject(obj) {
 		if (typeof (obj) == `object` && (!(obj instanceof GameObject))) {
@@ -972,18 +972,18 @@ class ExecutorComponent extends Component {
 
 	/**
 	 * Removes previous node from the chain
-	 * @returns {ExecutorComponent}
+	 * @returns {ChainComponent}
 	 */
 	removePrevious() {
 		this._enqueue(CMD_REMOVE_PREVIOUS);
 		return this;
 	}
 
-	onmessage(msg) {
+	onMessage(msg) {
 		this.helpParam2 = msg.action;
 	}
 
-	update(delta, absolute) {
+	onUpdate(delta, absolute) {
 		if (this.current == null) {
 			this.current = this._dequeue();
 		}
@@ -1007,7 +1007,7 @@ class ExecutorComponent extends Component {
 					temp.getParam1() > 0) {
 					// jump to the beginning
 					this.current = temp;
-					this.update(delta, absolute);
+					this.onUpdate(delta, absolute);
 				} else {
 					// reset values to their original state
 					temp.resetCache();
@@ -1026,7 +1026,7 @@ class ExecutorComponent extends Component {
 				let temp2 = this.scopeStack.pop();
 				if (temp2.param1()) {
 					this.current = temp2;
-					this.update(delta, absolute);
+					this.onUpdate(delta, absolute);
 				} else {
 					this._gotoNextImmediately(delta, absolute);
 				}
@@ -1047,7 +1047,7 @@ class ExecutorComponent extends Component {
 				break;
 			case CMD_END_INTERVAL:
 				this.current = this.scopeStack.pop();
-				this.update(delta, absolute);
+				this.onUpdate(delta, absolute);
 				break;
 			case CMD_BEGIN_IF:
 				if (this.current.param1()) {
@@ -1074,7 +1074,7 @@ class ExecutorComponent extends Component {
 						break;
 					}
 				}
-				this.update(delta, absolute);
+				this.onUpdate(delta, absolute);
 				break;
 			case CMD_ELSE:
 				// jump to the first END_IF block of the current branch
@@ -1092,7 +1092,7 @@ class ExecutorComponent extends Component {
 						break;
 					}
 				}
-				this.update(delta, absolute);
+				this.onUpdate(delta, absolute);
 				break;
 			case CMD_END_IF:
 				this._gotoNextImmediately(delta, absolute);
@@ -1176,7 +1176,7 @@ class ExecutorComponent extends Component {
 				this._gotoNextImmediately(delta, absolute);
 				break;
 			case CMD_REMOVE_GAME_OBJECT_BY_TAG:
-				let obj = this.scene.findFirstObjectByTag(this.current.param1);
+				let obj = this.scene.findObjectByTag(this.current.param1);
 				if (obj != null) {
 					obj.remove();
 				}
@@ -1243,6 +1243,6 @@ class ExecutorComponent extends Component {
 
 	_gotoNextImmediately(delta, absolute) {
 		this.current = this.current.next;
-		this.update(delta, absolute);
+		this.onUpdate(delta, absolute);
 	}
 }

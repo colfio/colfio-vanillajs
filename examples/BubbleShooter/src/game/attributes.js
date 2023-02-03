@@ -131,7 +131,7 @@ class TextMessageManager {
     _processNext(gameObj) {
         this.current = gameObj;
         this.scene.addGlobalGameObject(this.current);
-        this.current.findComponent("TextMessageAnimator").onFinished = () => {
+        this.current.findComponent("TextMessageAnimator").onFinish = () => {
             this.current = null;
             if (this.queue.length != 0) {
                 let first = this.queue.shift();

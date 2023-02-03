@@ -30,12 +30,12 @@
 			scene.addGlobalComponent(new DebugComponent(false, document.getElementById("debugSect")));
 
 
-			let obj = new GameObjectBuilder("rect1")
+			let obj = new Builder("rect1")
 			.withMesh(new RectMesh("rgb(255,0,0)", 1, 1))
 			.withPosition(2,2)
 			.withCenteredOrigin()
 			.withComponent(new BasicRenderer())
-			.withComponent(new ExecutorComponent()
+			.withComponent(new ChainComponent()
 				.beginInterval(0)
 				.execute((cmp) => cmp.addComponentAndWait(new TranslateAnimation(1,1,2,1,1)))
 				.removePrevious()

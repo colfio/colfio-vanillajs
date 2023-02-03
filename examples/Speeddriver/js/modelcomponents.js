@@ -7,17 +7,17 @@ let scene = null;
 
 // component that orchestrates global game events
 class GameComponent extends Component {
-	oninit() {
+	onInit() {
 		this.gameModel = this.scene.getGlobalAttribute(ATTR_GAME_MODEL);
 
 		// display animation at the start
 		this.owner.addComponent(new AnimTextDisplayComponent("Get ready", 5000));
-		this.car = this.scene.findFirstObjectByTag("car");
+		this.car = this.scene.findObjectByTag("car");
 		this.spriteMgr = this.scene.getGlobalAttribute(ATTR_SPRITE_MGR);
 		this.subscribe(MSG_CAR_COLLIDED); // subscribe for messages
 	}
 
-	onmessage(msg) {
+	onMessage(msg) {
 		if (msg.action == MSG_CAR_COLLIDED) {
 			// a collision occurred -> decrement number of lives and handle game over if there are no lives left
 
@@ -28,24 +28,24 @@ class GameComponent extends Component {
 				this.car.sprite = this.spriteMgr.getCarDestroyed();
 
 				// wait 4 seconds and refresh the scene
-				this.scene.addPendingInvocation(4000, () => {
+				this.scene.callWithDelay(4000, () => {
 					this.scene.clearScene();
 					initGame();
 				});
 			} else {
 				// switch to immune mode, wait 4 seconds and disable it
 				this.gameModel.immuneMode = true;
-				this.sendmsg(MSG_IMMUNE_MODE_STARTED);
+				this.sendMessage(MSG_IMMUNE_MODE_STARTED);
 
-				this.scene.addPendingInvocation(4000, () => {
+				this.scene.callWithDelay(4000, () => {
 					this.gameModel.immuneMode = false;
-					this.sendmsg(MSG_IMMUNE_MODE_ENDED);
+					this.sendMessage(MSG_IMMUNE_MODE_ENDED);
 				});
 			}
 		}
 	}
 
-	update(delta, absolute) {
+	onUpdate(delta, absolute) {
 		// increase the traffic slowly
 		this.gameModel.trafficFrequency = Math.min(MAXIMUM_FREQUENCY, this.gameModel.trafficFrequency + delta * 0.0001);
 		// increase the score
@@ -62,20 +62,20 @@ class GameComponent extends Component {
 // component that adds and removes obstacles (other cars, trucks and the real obstacles)
 class ObstacleManager extends Component {
 
-	oninit() {
+	onInit() {
 		this.gameModel = this.scene.getGlobalAttribute(ATTR_GAME_MODEL);
 		this.spriteMgr = this.scene.getGlobalAttribute(ATTR_SPRITE_MGR);
 		this.obstacleMap = this.scene.getGlobalAttribute(ATTR_OBSTACLE_MAP);
 		this.subscribe(MSG_OBJECT_REMOVED); // subscribe for messages
 	}
 
-	onmessage(msg) {
+	onMessage(msg) {
 		if (msg.action == MSG_OBJECT_REMOVED && msg.gameObject.tag == "obstacle") {
 			this.obstacleMap.removeObstacle(msg.gameObject);
 		}
 	}
 
-	update(delta, absolute) {
+	onUpdate(delta, absolute) {
 
 		this._checkOldObstacles();
 
@@ -158,8 +158,8 @@ class ObstacleManager extends Component {
 		newObj.trans.posX = posX;
 		newObj.trans.posY = posY;
 		newObj.zIndex = 1;
-		newObj.addAttribute(ATTR_LANE, lane);
-		newObj.addAttribute(ATTR_SPEED, speed);
+		newObj.assignAttribute(ATTR_LANE, lane);
+		newObj.assignAttribute(ATTR_SPEED, speed);
 		
 		if (isMoving) {
 			newObj.addComponent(new MovingObstacleComponent()); // add AI component for dynamic obstacles
@@ -178,7 +178,7 @@ class ObstacleManager extends Component {
 // A very dummy AI component for moving obstacles (cars and trucks)
 class MovingObstacleComponent extends Component {
 
-	oninit() {
+	onInit() {
 		this.spriteMgr = this.scene.getGlobalAttribute(ATTR_SPRITE_MGR);
 		this.gameModel = this.scene.getGlobalAttribute(ATTR_GAME_MODEL);
 		this.obstacleMap = this.scene.getGlobalAttribute(ATTR_OBSTACLE_MAP);
@@ -186,7 +186,7 @@ class MovingObstacleComponent extends Component {
 		this.currentMaxSpeed = this.owner.getAttribute(ATTR_SPEED);
 	}
 
-	update(delta, absolute) {
+	onUpdate(delta, absolute) {
 		let currentSpeed = this.owner.getAttribute(ATTR_SPEED);
 		
 		// increment position according to the current speed
@@ -231,7 +231,7 @@ class MovingObstacleComponent extends Component {
 
 		// modify velocity according to the current acceleration speed
 		// use simple Euler integration method (v' = a*t)
-		this.owner.addAttribute(ATTR_SPEED, Math.max(0, currentSpeed + this.currentAcceleration * delta * 0.01));
+		this.owner.assignAttribute(ATTR_SPEED, Math.max(0, currentSpeed + this.currentAcceleration * delta * 0.01));
 
 	}
 }
@@ -239,7 +239,7 @@ class MovingObstacleComponent extends Component {
 // controller for player's car, contains methods that can be invoked from more specific controlers (like CarTouchController)
 class CarController extends Component {
 
-	oninit() {
+	onInit() {
 		this.steeringTime = 0; // the time the steering has started
 		this.steeringSourcePosX = 0; // initial position when the steering started
 		this.steeringState = STEERING_NONE; // initial steering state
@@ -250,11 +250,11 @@ class CarController extends Component {
 		this.subscribe(MSG_IMMUNE_MODE_ENDED);
 
 		// set the initial speed
-		this.owner.addAttribute(ATTR_SPEED, this.gameModel.currentMaxSpeed);
+		this.owner.assignAttribute(ATTR_SPEED, this.gameModel.currentMaxSpeed);
 		this.desiredVelocity = this.gameModel.currentMaxSpeed;
 	}
 
-	onmessage(msg) {
+	onMessage(msg) {
 		if (msg.action == MSG_IMMUNE_MODE_STARTED) {
 			// play the flickering animation and decelerate a little bit
 			this.owner.addComponent(new FlickerAnimation(4000));
@@ -283,7 +283,7 @@ class CarController extends Component {
 		this.steeringTime = 0;
 		this.steeringSourcePosX = this.owner.trans.posX;
 		let currentCarLane = this.owner.getAttribute(ATTR_LANE);
-		this.owner.addAttribute(ATTR_LANE, currentCarLane - 1); // change the attribute
+		this.owner.assignAttribute(ATTR_LANE, currentCarLane - 1); // change the attribute
 	}
 
 	// goes to the right line
@@ -292,10 +292,10 @@ class CarController extends Component {
 		this.steeringTime = 0;
 		this.steeringSourcePosX = this.owner.trans.posX;
 		let currentCarLane = this.owner.getAttribute(ATTR_LANE);
-		this.owner.addAttribute(ATTR_LANE, currentCarLane + 1); // change the attribute
+		this.owner.assignAttribute(ATTR_LANE, currentCarLane + 1); // change the attribute
 	}
 	
-	update(delta, absolute) {
+	onUpdate(delta, absolute) {
 		this._handleSpeed(delta, absolute);
 		this._handleSteering(delta, absolute);
 	}
@@ -319,7 +319,7 @@ class CarController extends Component {
 			}
 
 			// update the attribute
-			this.owner.addAttribute(ATTR_SPEED, speed);
+			this.owner.assignAttribute(ATTR_SPEED, speed);
 		}
 
 		// increment position according to the current speed
@@ -359,13 +359,13 @@ class CarController extends Component {
 
 // component that controls the car according to the mouse or touch events
 class CarTouchController extends CarController {
-	oninit() {
-		super.oninit();
+	onInit() {
+		super.onInit();
 		this.subscribe(MSG_UP); // subscribe for messages
 	}
 
-	onmessage(msg) {
-		super.onmessage(msg);
+	onMessage(msg) {
+		super.onMessage(msg);
 		if (msg.action == MSG_UP) {
 			let posX = msg.data.mousePos.posX;
 			let posY = msg.data.mousePos.posY;
@@ -387,18 +387,18 @@ class CarTouchController extends CarController {
 // is in collision with some other object
 class CarCollisionChecker extends Component {
 
-	oninit() {
+	onInit() {
 		this.gameModel = this.scene.getGlobalAttribute(ATTR_GAME_MODEL);
 		this.obstacleMap = this.scene.getGlobalAttribute(ATTR_OBSTACLE_MAP);
 	}
 
-	update(delta, absolute) {
+	onUpdate(delta, absolute) {
 		if (!this.gameModel.immuneMode) {
 			// check for collisions
 			let collided = this.obstacleMap.findCollidedObstacle(this.owner);
 			if (collided != null) {
 				// just send the message
-				this.sendmsg(MSG_CAR_COLLIDED);
+				this.sendMessage(MSG_CAR_COLLIDED);
 			}
 		}
 	}

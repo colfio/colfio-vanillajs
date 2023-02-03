@@ -39,7 +39,7 @@ Factory.newGame = function () {
 
 	let backgroundDiff = bgr.height / UNIT_SIZE - scene.getHeight();
 
-	let gameManager = new GameObjectBuilder("game_manager")
+	let gameManager = new Builder("game_manager")
 		.withComponent(new GameComponent())
 		.withComponent(new InputManager(INPUT_DOWN | INPUT_MOVE))
 		.withComponent(new PlayerMouseController())
@@ -54,14 +54,14 @@ Factory.newGame = function () {
 		.withMesh(new ImageMesh(bgr)) // assign the background image as a mesh of the main game object 
 		.asGlobal().build(scene);
 
-	let gameOver = new GameObjectBuilder("gameOverOverlay")
+	let gameOver = new Builder("gameOverOverlay")
         .withComponent(new GameOverOverlay())
         .withComponent(new BasicRenderer())
         .withMesh(new RectMesh("#00000055", scene.getWidth(), scene.getHeight()))
         .withZIndex(30)
         .asGlobal().build(scene);
 
-    let scoreDisplay = new GameObjectBuilder("scoreDisplay")
+    let scoreDisplay = new Builder("scoreDisplay")
         .withPosition(scene.getWidth() - 3.5, scene.getHeight() - 4)
         .withComponent(new ScoreDisplay())
         .withComponent(new BasicRenderer())
@@ -70,7 +70,7 @@ Factory.newGame = function () {
         .asGlobal().build(scene);
 
 	// parent object for all bubbles
-	let bubbles = new GameObjectBuilder("bubbles")
+	let bubbles = new Builder("bubbles")
 		.withPosition(0, -0.3)
 		.asGlobal().build(scene);
 
@@ -103,13 +103,13 @@ Factory.newGame = function () {
 	// ===================================================================
 	// Cannon
 
-	let cannonGroup = new GameObjectBuilder("cannon_group")
+	let cannonGroup = new Builder("cannon_group")
 		.withPosition(3.4, stuffPosition)
 		.withCenteredOrigin()
 		.asGlobal().build(scene);
 
 	let cannonSpr = spriteMgr.getSpriteByName("cannon", "cannon");
-	let cannon = new GameObjectBuilder("cannon")
+	let cannon = new Builder("cannon")
 		.withZIndex(cannonSpr.zIndex)
 		.withMesh(spriteMgr.createSpriteEntity("cannon", "cannon"))
 		.withPosition(cannonSpr.posX, cannonSpr.posY)
@@ -119,7 +119,7 @@ Factory.newGame = function () {
 
 
 	let glowSpr = spriteMgr.getSpriteByName("cannon", "glow");
-	let glow = new GameObjectBuilder("glow")
+	let glow = new Builder("glow")
 		.withMesh(spriteMgr.createSpriteEntity("cannon", "glow"))
 		.withPosition(glowSpr.posX, glowSpr.posY)
 		.withZIndex(glowSpr.zIndex)
@@ -129,7 +129,7 @@ Factory.newGame = function () {
 		.build(scene);
 
 	let sightsSpr = spriteMgr.getSpriteByName("cannon", "sights");
-	let sights = new GameObjectBuilder("sights")
+	let sights = new Builder("sights")
 		.withMesh(spriteMgr.createSpriteEntity("cannon", "sights"))
 		.withPosition(sightsSpr.posX, sightsSpr.posY)
 		.withZIndex(sightsSpr.zIndex)
@@ -138,7 +138,7 @@ Factory.newGame = function () {
 		.build(scene);
 
 	let cannonBaseSpr = spriteMgr.getSpriteByName("cannon", "base");
-	let cannonBase = new GameObjectBuilder("base")
+	let cannonBase = new Builder("base")
 		.withMesh(spriteMgr.createSpriteEntity("cannon", "base"))
 		.withPosition(cannonBaseSpr.posX, cannonBaseSpr.posY)
 		.withZIndex(cannonBaseSpr.zIndex)
@@ -146,7 +146,7 @@ Factory.newGame = function () {
 		.withParent(cannonGroup).build(scene);
 
 	let cannonGrassSpr = spriteMgr.getSpriteByName("cannon", "grass");
-	let cannonGrass = new GameObjectBuilder("grass")
+	let cannonGrass = new Builder("grass")
 		.withMesh(spriteMgr.createSpriteEntity("cannon", "grass"))
 		.withPosition(cannonGrassSpr.posX, cannonGrassSpr.posY)
 		.withZIndex(cannonGrassSpr.zIndex)
@@ -154,7 +154,7 @@ Factory.newGame = function () {
 		.asGlobal().build(scene);
 
 	let cannonShadowSpr = spriteMgr.getSpriteByName("cannon", "shadow");
-	let cannonShadow = new GameObjectBuilder("shadow")
+	let cannonShadow = new Builder("shadow")
 		.withMesh(spriteMgr.createSpriteEntity("cannon", "shadow"))
 		.withPosition(cannonShadowSpr.posX, cannonShadowSpr.posY)
 		.withZIndex(cannonShadowSpr.zIndex)
@@ -164,7 +164,7 @@ Factory.newGame = function () {
 	// ===================================================================
 	// Creature
 
-	let creature = new GameObjectBuilder("creature")
+	let creature = new Builder("creature")
 		.withPosition(1, stuffPosition - 1.5)
 		.withZIndex(CREATURE_ZINDEX)
 		.withComponent(new CreatureAnimator())
@@ -175,7 +175,7 @@ Factory.newGame = function () {
 
 	// add all creature parts
 	for (let sprite of spriteMgr.getSprites("character")) {
-		let part = new GameObjectBuilder(sprite.name)
+		let part = new Builder(sprite.name)
 			.withPosition(sprite.posX, sprite.posY)
 			.withZIndex(sprite.zIndex)
 			.withMesh(spriteMgr.createSpriteEntity("character", sprite.name))
@@ -193,7 +193,7 @@ Factory.newGame = function () {
 	// Dynamic bubbles
 
 	// object that will represent a bubble in the cannon
-	let cannonBubble = new GameObjectBuilder("cannonBubble")
+	let cannonBubble = new Builder("cannonBubble")
 		.withAttribute(ATTR_BUBBLE, new Bubble(90, configMgr.bubbleSpeed, configMgr.getBubbleByIndex(0))) // get any bubbleInfo
 		.withTransform(new Trans(-0.36, -1.2, 0, 0.5, 0.5))
 		.withZIndex(MOVINGBUBBLE_ZINDEX)
@@ -203,7 +203,7 @@ Factory.newGame = function () {
 		.build(scene);
 
 	// object that will represent the next bubble
-	let nextBub = new GameObjectBuilder("nextBubble")
+	let nextBub = new Builder("nextBubble")
 		.withAttribute(ATTR_BUBBLE, new Bubble(0, configMgr.bubbleSpeed, configMgr.getBubbleByIndex(0))) // get any bubbleInfo
 		.withComponent(new BasicRenderer())
 		.withComponent(new TileStaticAnimator())
@@ -227,16 +227,16 @@ Factory.newGame = function () {
 	Factory.pushNewMessage(configMgr.messages["msg_game_start"]);
 	
 	// play the first sound a bit later
-	scene.addPendingInvocation(0.5, () => {
+	scene.callWithDelay(0.5, () => {
 		playSound(ASSETS_SND_NEW_GAME);
 	});
 }
 
 Factory.createBubbleView = function (tile) {
-	let bubbles = scene.findFirstObjectByTag("bubbles");
+	let bubbles = scene.findObjectByTag("bubbles");
 	let spriteMgr = scene.getGlobalAttribute(ATTR_SPRITE_MGR);
 
-	let bubble = new GameObjectBuilder("bubble")
+	let bubble = new Builder("bubble")
 		.withMesh(spriteMgr.createSpriteBubbleEntity(0)) // just add a random bubble, we need its dimensions
 		.withAttribute(ATTR_TILE, tile)
 		.withAttribute(ATTR_BUBBLE_VIEWSTATE, new BubbleViewState())
@@ -251,12 +251,12 @@ Factory.createBubbleView = function (tile) {
 
 Factory.createMovingBubble = function () {
 	// get bubble that is in the cannon
-	let cannonBubble = scene.findFirstObjectByTag("cannonBubble");
+	let cannonBubble = scene.findObjectByTag("cannonBubble");
 
 	// position of zero-rotated bubble must be the same as for the rotated one
 	let bbox = cannonBubble.bbox.getCenter();
 
-	let newBubble = new GameObjectBuilder("movingBubble")
+	let newBubble = new Builder("movingBubble")
 		.withZIndex(MOVINGBUBBLE_ZINDEX)
 		.withMesh(cannonBubble.mesh) // the same as for cannon bubble
 		.withAttribute(ATTR_BUBBLE, cannonBubble.getAttribute(ATTR_BUBBLE).clone()) // copy the bubble entity
@@ -270,13 +270,13 @@ Factory.createMovingBubble = function () {
 
 // Create a random bubble for the player
 Factory.addNextBubble = function (tileid) {
-	let cannonBubble = scene.findFirstObjectByTag("cannonBubble");
-	let nextBubble = scene.findFirstObjectByTag("nextBubble");
+	let cannonBubble = scene.findObjectByTag("cannonBubble");
+	let nextBubble = scene.findObjectByTag("nextBubble");
 	let spriteMgr = scene.getGlobalAttribute(ATTR_SPRITE_MGR);
 	let config = scene.getGlobalAttribute(ATTR_CONFIG_MGR);
 
 	// Move attributes from nextBubble to the cannonBubble 
-	cannonBubble.addAttribute(ATTR_BUBBLE, nextBubble.getAttribute(ATTR_BUBBLE).clone());
+	cannonBubble.assignAttribute(ATTR_BUBBLE, nextBubble.getAttribute(ATTR_BUBBLE).clone());
 	cannonBubble.mesh = nextBubble.mesh;
 
 	// Change current bubble info entity
@@ -297,7 +297,7 @@ Factory.createMessage = function (message) {
 	let rotation = new RotationAnimation(config.bonusAnimMinAngle, config.bonusAnimMaxAngle, config.bonusAnimDuration, true, 0);
 	rotation.interpolation = Interpolation[config.bonusAnimInterpolation];
 
-	let messageObj = new GameObjectBuilder("message")
+	let messageObj = new Builder("message")
 		.withPosition(scene.getWidth() / 2, scene.getHeight() / 2 - 1)
 		.withCenteredOrigin()
 		.withComponent(new TextMessageAnimator(config.bonusAnimTotalDuration))

@@ -82,9 +82,9 @@ function gameLoop(tframe = 0) {
 	lastframe = tframe;
 
 	gameTime += dt;
-	scene.update(dt, gameTime);
-    // clear canvas and call update and render function upon the scene
+	scene.onUpdate(dt, gameTime);
+    // clear canvas and call onUpdate and render function upon the scene
     canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
-	scene.draw();
+	scene.onDraw();
 }
 // =============================================================
